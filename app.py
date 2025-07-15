@@ -38,9 +38,28 @@ def webhook():
 
                 # Step 2: Download media
                 audio_data = requests.get(media_url, headers=headers)
-                with open('voice.ogg', 'wb') as f:
+                with open('/tmp/voice.ogg', 'wb') as f:
                     f.write(audio_data.content)
                 print("✅ Voice note downloaded!")
+
+                # Step 3: Transcribe audio with Whisper
+                try:
+                    files = {
+                        'file': open("/tmp/voice.ogg", 'rb'),
+                    }
+                    headers = {
+                        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"
+                    }
+                    response = requests.post(
+                        "https://api.openai.com/v1/audio/transcriptions",
+                        headers=headers,
+                        files=files,
+                        data={"model": "whisper-1"}
+                    )
+                    transcription = response.json().get("text")
+                    print("📝 Transcription:", transcription)
+                except Exception as e:
+                    print("❌ Whisper API Error:", e)
 
     except Exception as e:
         print("❌ Error:", e)
