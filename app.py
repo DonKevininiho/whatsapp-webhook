@@ -1,3 +1,4 @@
+GRAPH_VERSION = "v23.0"
 from flask import Flask, request
 import requests
 import os
@@ -39,11 +40,13 @@ def webhook():
             print("🔊 Voice note media ID:", media_id, flush=True)
 
             # Step 1: Get media URL
-            url = f"https://graph.facebook.com/v19.0/{media_id}"
+            phone_number_id = value['metadata'].get('phone_number_id')
             headers = {"Authorization": f"Bearer {ACCESS_TOKEN}"}
+            url = f"https://graph.facebook.com/{GRAPH_VERSION}/{media_id}"
             response = requests.get(url, headers=headers)
             media_url = response.json().get('url')
             if not media_url:
+                print("❌ Failed to fetch media URL from API, response:", response.text, flush=True)
                 raise ValueError("Failed to fetch media URL from API")
             print("🔗 Media URL:", media_url, flush=True)
 
