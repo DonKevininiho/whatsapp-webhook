@@ -56,14 +56,20 @@ def webhook():
                     headers = {
                         "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"
                     }
+                    data = {"model": "whisper-1", "response_format": "json", "language": "en"}
                     response = requests.post(
                         "https://api.openai.com/v1/audio/transcriptions",
                         headers=headers,
                         files=files,
-                        data={"model": "whisper-1"}
+                        data=data
                     )
-                    transcription = response.json().get("text")
-                    print("📝 Transcription:", transcription, flush=True)
+                    result = response.json()
+                    print("📨 Whisper API response:", result, flush=True)
+                    transcription = result.get("text")
+                    if transcription:
+                        print("📝 Transcription:", transcription, flush=True)
+                    else:
+                        print("❗ No transcription text found in response.", flush=True)
             except Exception as e:
                 print("❌ Whisper API Error:", e, flush=True)
 
