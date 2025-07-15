@@ -4,6 +4,8 @@ import os
 
 app = Flask(__name__)
 
+latest_transcription = ""
+
 VERIFY_TOKEN = 'Kev!nB@t122'
 ACCESS_TOKEN = 'EAAJbehBwwNABPEEU6VVQLSn0PsYiZB2AQTuFKrTgvKVpU83vL0ZBoZAtoHTI7nZCyBWxK2jAa5m6QndLOSNzgUW0lXoJ2uXyh9NhyPdIuuWJEBSk05DIZA6r4BuOGN1OQZCJ6bdLZBjZC18g6ip0eymSx0DbYtusdLKOOP1mE55l32ZCgKjiJYrC4RcvcaMOc1jI6ofB5Q3QY1Bu4ZBVlpXlSiTjsDb8UvoMstgqVpUyT40sjvZBQZDZD'
 
@@ -37,14 +39,17 @@ def webhook():
             print("🔊 Voice note media ID:", media_id, flush=True)
 
             # Step 1: Get media URL
-            url = f"https://graph.facebook.com/v18.0/{media_id}"
+            url = f"https://graph.facebook.com/v19.0/{media_id}"
             headers = {"Authorization": f"Bearer {ACCESS_TOKEN}"}
             response = requests.get(url, headers=headers)
             media_url = response.json().get('url')
+            if not media_url:
+                raise ValueError("Failed to fetch media URL from API")
             print("🔗 Media URL:", media_url, flush=True)
 
             # Step 2: Download media
             audio_data = requests.get(media_url, headers=headers)
+            audio_data.raise_for_status()
             with open('/tmp/voice.ogg', 'wb') as f:
                 f.write(audio_data.content)
             print("✅ Voice note downloaded to /tmp/voice.ogg", flush=True)
@@ -68,6 +73,9 @@ def webhook():
                     transcription = result.get("text")
                     if transcription:
                         print("📝 Transcription:", transcription, flush=True)
+                        global latest_transcription
+                        latest_transcription = transcription
+                        return transcription, 200
                     else:
                         print("❗ No transcription text found in response.", flush=True)
             except Exception as e:
@@ -80,6 +88,14 @@ def webhook():
         print("❌ Webhook error:", e, flush=True)
 
     return "OK", 200
+
+@app.route('/transcription', methods=['GET'])
+def get_transcription():
+    return latest_transcription or "No transcription yet", 200
+
+@app.route('/', methods=['GET'])
+def root():
+    return "👋 WhatsApp Webhook is live!", 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
